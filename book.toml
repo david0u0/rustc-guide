@@ -1,7 +1,8 @@
 [book]
-title = "Guide to Rustc Development"
-author = "Rustc developers"
-description = "A guide to developing rustc"
+title = "Rustc 开发指南"
+author = "Rustc 开发者"
+description = "Rustc 开发指南"
+src = "src-zh"
 
 [output.html]
 
