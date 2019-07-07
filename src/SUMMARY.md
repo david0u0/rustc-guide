@@ -39,6 +39,7 @@
     - [The HIR (High-level IR)](./hir.md)
         - [Lowering AST to HIR](./lowering.md)
         - [Debugging](./hir-debugging.md)
+    - [Closure expansion](./closure.md)
     - [The `ty` module: representing types](./ty.md)
     - [Kinds](./kinds.md)
     - [Type inference](./type-inference.md)
@@ -75,6 +76,12 @@
             - [Move paths](./borrow_check/moves_and_initialization/move_paths.md)
         - [MIR type checker](./borrow_check/type_check.md)
         - [Region inference](./borrow_check/region_inference.md)
+            - [Constraint propagation](./borrow_check/region_inference/constraint_propagation.md)
+            - [Lifetime parameters](./borrow_check/region_inference/lifetime_parameters.md)
+            - [Member constraints](./borrow_check/region_inference/member_constraints.md)
+            - [Placeholders and universes][pau]
+            - [Closure constraints](./borrow_check/region_inference/closure_constraints.md)
+            - [Errror reporting](./borrow_check/region_inference/error_reporting.md)
         - [Two-phase-borrows](./borrow_check/two_phase_borrows.md)
     - [Constant evaluation](./const-eval.md)
         - [miri const evaluator](./miri.md)
@@ -83,6 +90,7 @@
         - [Updating LLVM](./codegen/updating-llvm.md)
         - [Debugging LLVM](./codegen/debugging.md)
     - [Profile-guided Optimization](./profile-guided-optimization.md)
+    - [Debugging Support in Rust Compiler](./debugging-support-in-rustc.md)
 
 ---
 
@@ -90,4 +98,7 @@
 [Appendix B: Background material](./appendix/background.md)
 [Appendix C: Glossary](./appendix/glossary.md)
 [Appendix D: Code Index](./appendix/code-index.md)
+[Appendix E: Bibliography](./appendix/bibliography.md)
 [](./important-links.md)
+
+[pau]: ./borrow_check/region_inference/placeholders_and_universes.md
