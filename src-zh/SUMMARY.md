@@ -172,7 +172,7 @@
     - [代码生成](./codegen.md)
         - [更新 LLVM](./codegen/updating-llvm.md)
         - [调试 LLVM](./codegen/debugging.md)
-    - [性能剖析导向的优化](./profile-guided-optimization.md)
+    - [性能剖析指导的优化](./profile-guided-optimization.md)
 
 ---
 
