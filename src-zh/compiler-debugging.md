@@ -1,33 +1,43 @@
-# Debugging the compiler
+# 调试编译器
 [debugging]: #debugging
 
-This chapter contains a few tips to debug the compiler. These tips aim to be
+本章节涵盖一些调试编译器的小技巧，不论你在处理什麽问题，这些技巧应该都能派上用场。一些其它章节则可能涵盖编译器的特定面向（例如，[Queries Debugging and Testing chapter](./incrcomp-debugging.html) 或 [LLVM Debuggin chapter](./codegen/debugging.md)。
+
+<!--This chapter contains a few tips to debug the compiler. These tips aim to be
 useful no matter what you are working on.  Some of the other chapters have
 advice about specific parts of the compiler (e.g. the [Queries Debugging and
 Testing
 chapter](./incrcomp-debugging.html) or
-the [LLVM Debugging chapter](./codegen/debugging.md)).
+the [LLVM Debugging chapter](./codegen/debugging.md)).-->
 
-## `-Z` flags
+## `-Z` 旗标
 
-The compiler has a bunch of `-Z` flags. These are unstable flags that are only
+编译器有许多 `-Z` 旗标，它们并不稳定，只能在 nightly 版使用。许多 `-Z` 旗标可以帮助你调试编译器。如果你想列出完整的 `-Z` 旗标，请使用 `-Z help`。
+
+`-Z verbose` 就是个好用的旗标，它会令编译器印出更多讯息，可能有助于调试。
+
+<!-- The compiler has a bunch of `-Z` flags. These are unstable flags that are only
 enabled on nightly. Many of them are useful for debugging. To get a full listing
 of `-Z` flags, use `-Z help`.
 
 One useful flag is `-Z verbose`, which generally enables printing more info that
-could be useful for debugging.
+could be useful for debugging. -->
 
-## Getting a backtrace
+## 取得回溯记录 (backtrace)
 [getting-a-backtrace]: #getting-a-backtrace
 
-When you have an ICE (panic in the compiler), you can set
+当你遭遇到 ICE (panic in the compiler)，你可以设置 `RUST_BACKTRACE=1` 以取得该次 `panic!` 的栈追踪，如同普通的 rust 程式。如果我没记错，回溯记录 **不适用** 于 Mac 及 MigGW，很抱歉。如果你遭遇困难，或是回溯记录充满 `unknown`，你可能会想弄个 Linux 或 MSVC on Windows 来用。
+
+<!-- When you have an ICE (panic in the compiler), you can set
 `RUST_BACKTRACE=1` to get the stack trace of the `panic!` like in
 normal Rust programs.  IIRC backtraces **don't work** on Mac and on MinGW,
 sorry. If you have trouble or the backtraces are full of `unknown`,
 you might want to find some way to use Linux or MSVC on Windows.
 
 In the default configuration, you don't have line numbers enabled, so the
-backtrace looks like this:
+backtrace looks like this: -->
+
+在默认配置下，你无法看见代码行数，因此回溯记录应如下：
 
 ```text
 stack backtrace:
@@ -46,10 +56,12 @@ stack backtrace:
   37: rustc_driver::run_compiler
 ```
 
-If you want line numbers for the stack trace, you can enable `debug = true` in
+如果想得到栈追踪的行数，可以在 config.toml 中设定 `debug = true`，并重新建置编译器（`debuginfo-level = 1` 也会打上行数，但 `debug = true` 会给出完整的调试讯息）。如此一来回溯讯息应如下：
+
+<!-- If you want line numbers for the stack trace, you can enable `debug = true` in
 your config.toml and rebuild the compiler (`debuginfo-level = 1` will also add
 line numbers, but `debug = true` gives full debuginfo). Then the backtrace will 
-look like this:
+look like this: -->
 
 ```text
 stack backtrace:
@@ -67,10 +79,12 @@ stack backtrace:
              at /home/user/rust/src/librustc_driver/lib.rs:253
 ```
 
-## Getting a backtrace for errors
+## 取得错误的回溯记录
 [getting-a-backtrace-for-errors]: #getting-a-backtrace-for-errors
 
-If you want to get a backtrace to the point where the compiler emits
+如果想回溯至编译器产生错误的确切段落，可以设定 `-Z treat-err-as-bug=n`，这会让编译器跳过 `n` 个错误或 `delay_span_bug`（一个类似报错的函式），再下一次就会 panic。如果不带 `=n`，编译器会将 `n` 设为 `0`，因此遇到一个错误就会 panic。
+
+<!-- If you want to get a backtrace to the point where the compiler emits
 an error message, you can pass the `-Z treat-err-as-bug=n`, which
 will make the compiler skip `n` errors or `delay_span_bug` calls and then
 panic on the next one. If you leave off `=n`, the compiler will assume `0` for
@@ -79,7 +93,11 @@ panic on the next one. If you leave off `=n`, the compiler will assume `0` for
 This can also help when debugging `delay_span_bug` calls - it will make
 the first `delay_span_bug` call panic, which will give you a useful backtrace.
 
-For example:
+For example: -->
+
+这也有助于 `delay_span_bug` 被呼叫的情境──它会令程式在 `delay_span_bug` 被呼叫第一次时 panic，并且印出有用的回溯记录。
+
+例如：
 
 ```bash
 $ cat error.rs
@@ -144,18 +162,24 @@ stack backtrace:
 $ # Cool, now I have a backtrace for the error
 ```
 
-## Getting logging output
+## 取得日誌输出
 [getting-logging-output]: #getting-logging-output
 
-These crates are used in compiler for logging:
+编译器使用了以下的 crate 处理日誌：
 
 * [log]
-* [env-logger]: check the link to see the full `RUSTC_LOG` syntax
+* [env-logger]: 参照连结以瞭解完整的 `RUST_LOG` 语法
 
 [log]: https://docs.rs/log/0.4.6/log/index.html
 [env-logger]: https://docs.rs/env_logger/0.4.3/env_logger/
 
-The compiler has a lot of `debug!` calls, which print out logging information
+编译器时常会呼叫 `debug!` 在各处印出日誌讯息，它们十分有用，至少能帮你限缩臭虫的位置（甚至直接找到它），或釐清为何编译器做了某件事。
+
+为了印出日誌，你得设定环境变数 `RUSTC_LOG` 来筛选讯息。例如，执行 `RUSTC_LOG=module::path rustc my-file.rs` 可取得特定模块的日誌。所有 `debug!` 都将输出至标准错误流(standard error)。
+
+**需注意，除非你使用了非常严格的筛选条件，否则将会产生大量的输出，因此你应该用你能想到的最特定的模块（或多个模块，这时你该用逗号来分隔它们）**。通常你会想把标准错误流导向一个档案，并以文本编辑器检视之。
+
+<!-- The compiler has a lot of `debug!` calls, which print out logging information
 at many points. These are very useful to at least narrow down the location of
 a bug if not to find it entirely, or just to orient yourself as to why the
 compiler is doing a particular thing.
@@ -170,7 +194,9 @@ output, so use the most specific module(s) you can (comma-separated if
 multiple)**. It's typically a good idea to pipe standard error to a file and
 look at the log output with a text editor.
 
-So to put it together.
+So to put it together. -->
+
+小结一下：
 
 ```bash
 # This puts the output of all debug calls in `librustc/traits` into
@@ -196,9 +222,12 @@ $ RUSTC_LOG=debug rustc +local my-file.rs 2>all-log
 $ RUSTC_LOG=rustc_trans=info rustc +local my-file.rs
 ```
 
-### How to keep or remove `debug!` and `trace!` calls from the resulting binary
+### 如何从二进制档中保留/移除 `debug!` 和 `trace!`
+虽然每次建置编译器都会包含 `error!`, `warn!` 和 `info!`，但 `debug!` 和 `trace!` 只会在 config.toml 中设定 `debug-assertions=yes` 时被保留下来，且该选项默认关闭。所以，如果看不见 `DEBUG` 日誌，尤其当你执行 `RUSTC_LOG=rustc rustc some.rs` 却只看见 `INFO` 日誌，请确保 config.toml 中 `debug-assertions=yes`。
 
-While calls to `error!`, `warn!` and `info!` are included in every build of the compiler,
+我也认为，在某些情况下，只改变这个设定不会触發重编译。因此如果你在曾经建置过的状态下修改了该设置，你可能会想使用 `x.py clean` 强迫重编译。
+
+<!-- While calls to `error!`, `warn!` and `info!` are included in every build of the compiler,
 calls to `debug!` and `trace!` are only included in the program if
 `debug-assertions=yes` is turned on in config.toml (it is
 turned off by default), so if you don't see `DEBUG` logs, especially
@@ -208,11 +237,14 @@ config.toml.
 
 I also think that in some cases just setting it will not trigger a rebuild,
 so if you changed it and you already have a compiler built, you might
-want to call `x.py clean` to force one.
+want to call `x.py clean` to force one. -->
 
-### Logging etiquette and conventions
+### 日誌礼议和惯例
+由于 `debug!` 默认会被移除，通常你不需担心「无谓地」呼叫 `debug!` 并把它们提交出去──它们不会拖累最终成品的效能，而且如果它们能帮助你定位一个臭虫，很可能也会帮助到其它人。
 
-Because calls to `debug!` are removed by default, in most cases, don't worry
+一个不算太严格的惯例是：在 `foo` 函式 *开始* 时使用 `debug!("foo(...)")`，在函式 *进行中* 时使用 `debug!("foo: ...")`。另一个小惯例是在调试日誌中使用 `{:?}`。
+
+<!-- Because calls to `debug!` are removed by default, in most cases, don't worry
 about adding "unnecessary" calls to `debug!` and leaving them in code you
 commit - they won't slow down the performance of what we ship, and if they
 helped you pinning down a bug, they will probably help someone else with a
@@ -225,47 +257,63 @@ logs.
 
 One thing to be **careful** of is **expensive** operations in logs.
 
-If in the module `rustc::foo` you have a statement
+If in the module `rustc::foo` you have a statement -->
+
+一个 **需要注意** 的事项是日誌中的 **昂贵** 操作。
+
+如果你在 `rustc::foo` 模块中有以下叙述：
 
 ```Rust
 debug!("{:?}", random_operation(tcx));
 ```
 
-Then if someone runs a debug `rustc` with `RUSTC_LOG=rustc::bar`, then
+则当别人用 `RUSTC_LOG=rustc::bar` 来执行 `rustc` 的调试建置，`random_operation` 将被执行。
+
+这代表你不该把太昂贵或可能崩溃的操作放在日誌中──这会给所有想要在自己模块中使用日誌的人造成困扰。没人会發现它，直到有人试着用日誌来定位 *另一个* 臭虫。
+
+<!-- Then if someone runs a debug `rustc` with `RUSTC_LOG=rustc::bar`, then
 `random_operation()` will run.
 
 This means that you should not put anything too expensive or likely to crash
 there - that would annoy anyone who wants to use logging for their own module.
-No-one will know it until someone tries to use logging to find *another* bug.
+No-one will know it until someone tries to use logging to find *another* bug. -->
 
-## Formatting Graphviz output (.dot files)
+## 格式化 Graphviz 的输出(.dot 档案)
 [formatting-graphviz-output]: #formatting-graphviz-output
 
-Some compiler options for debugging specific features yield graphviz graphs -
+某些编译器调适选项会产生 graphviz 图像──例如，`#[rustc_mir(borrowck_graphviz_postflow="suffix.dot")]` 特徵会输出多种 borrow-checker 的资料流图像。
+
+这类选项都将生成 `.dot` 档案。欲检视此类档案，可以安装 graphviz （例如 `apt-get install graphviz`）并执行：
+
+<!-- Some compiler options for debugging specific features yield graphviz graphs -
 e.g. the `#[rustc_mir(borrowck_graphviz_postflow="suffix.dot")]` attribute
 dumps various borrow-checker dataflow graphs.
 
 These all produce `.dot` files. To view these files, install graphviz (e.g.
-`apt-get install graphviz`) and then run the following commands:
+`apt-get install graphviz`) and then run the following commands: -->
 
 ```bash
 $ dot -T pdf maybe_init_suffix.dot > maybe_init_suffix.pdf
 $ firefox maybe_init_suffix.pdf # Or your favorite pdf viewer
 ```
 
-## Narrowing (Bisecting) Regressions
+## Narrowing (Bisecting) Regressions <!-- 不确定这标题怎麽翻… -->
 
-The [cargo-bisect-rustc][bisect] tool can be used as a quick and easy way to
+[cargo-bisect-rustc][bisect] 工具可以快速并简单地找到是哪个 PR 导致了 `rustc` 的行为改变。它会自动下载 `rustc` PR 产出物，并在你给定的专案上进行测试，直到發现行为改变。你可以检视该 PR 以釐清 *为何* 它改变了。关于如何使用该工具，详见 [这份教学][bisect-tutorial]。
+
+<!-- The [cargo-bisect-rustc][bisect] tool can be used as a quick and easy way to
 find exactly which PR caused a change in `rustc` behavior. It automatically
 downloads `rustc` PR artifacts and tests them against a project you provide
 until it finds the regression. You can then look at the PR to get more context
 on *why* it was changed.  See [this tutorial][bisect-tutorial] on how to use
-it.
+it. -->
 
 [bisect]: https://github.com/rust-lang-nursery/cargo-bisect-rustc
 [bisect-tutorial]: https://github.com/rust-lang-nursery/cargo-bisect-rustc/blob/master/TUTORIAL.md
 
-## Downloading Artifacts from Rust's CI
+## 从 Rust 的 CI 下载产出物
+
+kennytm 开發的 [rustup-toolchain-install-master][rtim] 工具可以从 Rust 的 CI 下载特定 SHA1 的产出物──这对应到某些 PR 能否成功落地──并为你在本地端使用做好准备。这也能用于 `@borstry` 的产出物。当你想要检视某个 PR 的建置成果、却不想自己建置时，这个工具非常有用。
 
 The [rustup-toolchain-install-master][rtim] tool by kennytm can be used to
 download the artifacts produced by Rust's CI for a specific SHA1 -- this
